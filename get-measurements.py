@@ -1,9 +1,9 @@
 """
-Author: Jonathan A. Valadez Saldaña
-Organisation: Universidad de Monterrey
-Contact: jonathan.valadezg@udem.edu
-First created: 4 Marzo 2024
-Last updated: 5 Marzo 2024
+Autor: Jonathan A. Valadez Saldaña
+Organización: Universidad de Monterrey
+Contacto: jonathan.valadezg@udem.edu
+Creado por primera vez: 4 de marzo de 2024
+Última actualización: 5 de marzo de 2024
 
 Ejecutar script en terminal: python get-measurements.py --cam_index 0 --Z 100  --cal_file calibration_Jonathan.json 
 """
@@ -14,15 +14,14 @@ import json
 
 def undistort_image(distorted_image, calibration_file):
     """
-    Corrects distortion in the input image.
+    Corrige la distorsión en la imagen de entrada.
     
-    Parameters:
-        distorted_image (numpy.ndarray): Input distorted image.
-        calibration_file (str): Path to the calibration file.
-        Z (float): Distance from the camera to the object to measure.
+    Parámetros:
+        distorted_image (numpy.ndarray): Imagen distorsionada de entrada.
+        calibration_file (str): Ruta al archivo de calibración.
         
     Returns:
-        numpy.ndarray: Undistorted image.
+        numpy.ndarray: Imagen sin distorsión.
     """
     # Cargar los parámetros de calibración desde el archivo JSON
     with open(calibration_file, 'r') as f:
@@ -39,15 +38,15 @@ def undistort_image(distorted_image, calibration_file):
 
 def compute_line_segments(points, image, Z):
     """
-    Computes the length of each line segment between consecutive points.
+    Calcula la longitud de cada segmento de línea entre puntos consecutivos.
     
-    Parameters:
-        points (list of tuples): List of (x, y) coordinates of selected points.
-        image (numpy.ndarray): Image where the line segments are drawn.
-        Z (float): Distance from the camera to the object to measure.
+    Parámetros:
+        points (lista de tuplas): Lista de coordenadas (x, y) de puntos seleccionados.
+        image (numpy.ndarray): Imagen donde se dibujan los segmentos de línea.
+        Z (float): Distancia desde la cámara hasta el objeto a medir.
         
     Returns:
-        list of float: List of lengths of line segments.
+        lista de float: Lista de longitudes de los segmentos de línea.
     """
     line_lengths = []
 
@@ -69,12 +68,12 @@ def compute_line_segments(points, image, Z):
     line_lengths.sort()
     
     # Imprimir las distancias en orden ascendente
-    print("Line lengths in ascending order:")
+    print("Longitudes de línea en orden ascendente:")
     for length in line_lengths:
         print(length)
     
     # Mostrar la imagen con las líneas dibujadas
-    cv2.imshow('Line Segments', image)
+    cv2.imshow('Segmentos de Línea', image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
@@ -83,30 +82,30 @@ def compute_line_segments(points, image, Z):
 
 def compute_perimeter(line_lengths):
     """
-    Computes the total perimeter from line segment lengths.
+    Calcula el perímetro total a partir de las longitudes de los segmentos de línea.
     
-    Parameters:
-        line_lengths (list of float): List of lengths of line segments.
+    Parámetros:
+        line_lengths (lista de float): Lista de longitudes de los segmentos de línea.
         
     Returns:
-        float: Total perimeter.
+        float: Perímetro total.
     """
     if not line_lengths:
-        print("No points selected. Perimeter cannot be calculated.")
+        print("No se han seleccionado puntos. No se puede calcular el perímetro.")
         return 0
     
     total_perimeter = sum(line_lengths)
-    print("Perimeter:", total_perimeter)
+    print("Perímetro:", total_perimeter)
     return total_perimeter
 
 def main(cam_index, Z, calibration_file):
     """
-    Main function to interact with the user and perform measurements.
+    Función principal para interactuar con el usuario y realizar mediciones.
     
-    Parameters:
-        cam_index (int): Index of the camera.
-        Z (float): Distance from the camera to the object to measure.
-        calibration_file (str): Path to the calibration file.
+    Parámetros:
+        cam_index (int): Índice de la cámara.
+        Z (float): Distancia desde la cámara hasta el objeto a medir.
+        calibration_file (str): Ruta al archivo de calibración.
     """
     # Inicialización de la cámara
     cap = cv2.VideoCapture(cam_index)
@@ -120,30 +119,32 @@ def main(cam_index, Z, calibration_file):
         
         if event == cv2.EVENT_LBUTTONDOWN:
             selected_points.append((x, y))
-            print("Point selected:", (x, y))
+            print("Punto seleccionado:", (x, y))
             # Dibujar un círculo en el punto seleccionado
             cv2.circle(undistorted_frame, (x, y), 5, (0, 255, 0), -1)  # Dibujar un círculo verde
-            cv2.imshow('Undistorted Image', undistorted_frame)
+            cv2.imshow('Imagen sin distorsión', undistorted_frame)
 
         elif event == cv2.EVENT_MBUTTONDOWN:
-            print("Selection stopped.")
+            print("Selección detenida.")
             if len(selected_points) >= 2:
                 selected_points.append(selected_points[0])
                 # Calcular las longitudes de los segmentos de línea y dibujar las líneas
-                compute_line_segments(selected_points, undistorted_frame, Z)
+                line_lengths = compute_line_segments(selected_points, undistorted_frame, Z)
+                # Calcular el perímetro a partir de las longitudes de los segmentos de línea
+                compute_perimeter(line_lengths)
                 # Limpiar la lista de puntos seleccionados para una nueva selección
                 selected_points.clear()
                 return  # Salir del bucle cuando se detenga la selección de puntos
             
         elif event == cv2.EVENT_RBUTTONDOWN:  # Manejar clic derecho
-            print("Deleting all selected points.")
+            print("Eliminando todos los puntos seleccionados.")
             selected_points.clear()  # Eliminar todos los puntos seleccionados
             # Redibujar la imagen con los puntos actualizados (en este caso, sin puntos)
-            cv2.imshow('Undistorted Image', undistorted_frame)
+            cv2.imshow('Imagen sin distorsión', undistorted_frame)
             
     # Establecer el manejador de eventos del mouse
-    cv2.namedWindow('Undistorted Image')
-    cv2.setMouseCallback('Undistorted Image', mouse_callback)
+    cv2.namedWindow('Imagen sin distorsión')
+    cv2.setMouseCallback('Imagen sin distorsión', mouse_callback)
     
     # Bucle principal
     while True:
@@ -155,7 +156,7 @@ def main(cam_index, Z, calibration_file):
         undistorted_frame = undistort_image(frame, calibration_file)
         
         # Mostrar la imagen corregida
-        cv2.imshow('Undistorted Image', undistorted_frame)
+        cv2.imshow('Imagen sin distorsión', undistorted_frame)
         
         # Esperar a que el usuario presione una tecla para salir
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -168,10 +169,10 @@ def main(cam_index, Z, calibration_file):
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description='Vision-based measurements script')
-    parser.add_argument('--cam_index', type=int, default=0, help='Index of the camera')
-    parser.add_argument('--Z', type=float, required=True, help='Distance from camera to object (in cm)')
-    parser.add_argument('--cal_file', type=str, required=True, help='Path to calibration file')
+    parser = argparse.ArgumentParser(description='Script de mediciones basadas en visión')
+    parser.add_argument('--cam_index', type=int, default=0, help='Índice de la cámara')
+    parser.add_argument('--Z', type=float, required=True, help='Distancia desde la cámara hasta el objeto (en cm)')
+    parser.add_argument('--cal_file', type=str, required=True, help='Ruta al archivo de calibración')
     args = parser.parse_args()
     
     main(args.cam_index, args.Z, args.cal_file)
