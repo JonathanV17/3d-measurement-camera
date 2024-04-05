@@ -4,6 +4,8 @@ Organisation: Universidad de Monterrey
 Contact: jonathan.valadezg@udem.edu
 First created: 4 Marzo 2024
 Last updated: 5 Marzo 2024
+
+Ejecutar script en terminal: python get-measurements.py --cam_index 0 --Z 100  --cal_file calibration_Jonathan.json 
 """
 
 import cv2
