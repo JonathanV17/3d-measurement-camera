@@ -63,7 +63,7 @@ def compute_line_segments(points, image, Z):
         line_lengths.append(scaled_distance)
         
         # Dibujar una línea entre los puntos en la imagen
-        cv2.line(image, point1, point2, (255, 0, 255), 2)  # Dibujar una línea morada
+        cv2.line(image, point1, point2, (255, 0, 255), 2)  # Dibujar una línea magenta
 
     # Ordenar las distancias en orden ascendente
     line_lengths.sort()
@@ -95,7 +95,7 @@ def compute_perimeter(line_lengths):
     print("Perímetro:", total_perimeter)
     return total_perimeter
 
-def main(cam_index, Z, calibration_file):
+def run_pipeline(cam_index, Z, calibration_file):
     """
     Función principal para interactuar con el usuario y realizar mediciones.
     
@@ -107,46 +107,53 @@ def main(cam_index, Z, calibration_file):
     # Inicialización de la cámara
     cap = cv2.VideoCapture(cam_index)
 
-    # Variables para almacenar los puntos seleccionados por el usuario
+    # Variable para almacenar los puntos seleccionados por el usuario
     selected_points = []
-    # Variables para almacenar los puntos de inicio y fin de los segmentos de línea
+
+    # Variable para almacenar los puntos de inicio y fin de los segmentos de línea
     line_segments = []
 
     # Función para manejar eventos del mouse
-    def mouse_callback(event, x, y, flags, param):
+    def mouse_callback(event, x, y, flags):
         nonlocal selected_points, line_segments
         
         if event == cv2.EVENT_LBUTTONDOWN:
             selected_points.append((x, y))
             print("Punto seleccionado:", (x, y))
-            # Dibujar un círculo en el punto seleccionado
-            cv2.circle(undistorted_frame, (x, y), 5, (0, 255, 0), -1)  # Dibujar un círculo verde
+
+            # Dibujar un punto en el punto seleccionado
+            cv2.circle(undistorted_frame, (x, y), 5, (0, 255, 0), -1)  # Dibujar un punto verde
             cv2.imshow('Imagen sin distorsión', undistorted_frame)
 
         elif event == cv2.EVENT_MBUTTONDOWN:
             print("Selección detenida.")
             if len(selected_points) >= 2:
                 selected_points.append(selected_points[0])
+
                 # Calcular las longitudes de los segmentos de línea y dibujar las líneas
                 line_lengths = compute_line_segments(selected_points, undistorted_frame, Z)
+
                 # Agregar las líneas a la lista de segmentos de línea
                 for i in range(len(selected_points) - 1):
                     line_segments.append((selected_points[i], selected_points[i+1]))
+
                 # Calcular el perímetro a partir de las longitudes de los segmentos de línea
                 compute_perimeter(line_lengths)
+
                 # Limpiar la lista de puntos seleccionados para una nueva selección
                 selected_points.clear()
     
-        elif event == cv2.EVENT_RBUTTONDOWN:  # Manejar clic derecho
+        elif event == cv2.EVENT_RBUTTONDOWN:  
             print("Eliminando todos los puntos seleccionados.")
             selected_points.clear()  # Eliminar todos los puntos seleccionados
             line_segments.clear()  # Eliminar todas las líneas
+
             # Redibujar la imagen con los puntos actualizados (en este caso, sin puntos)
             cv2.imshow('Imagen sin distorsión', undistorted_frame)
 
     # Establecer el manejador de eventos del mouse
-    cv2.namedWindow('Imagen sin distorsión')
-    cv2.setMouseCallback('Imagen sin distorsión', mouse_callback)
+    cv2.namedWindow('Imagen sin distorsion')
+    cv2.setMouseCallback('Imagen sin distorsion', mouse_callback)
     
     # Bucle principal
     while True:
@@ -185,4 +192,4 @@ if __name__ == "__main__":
     parser.add_argument('--cal_file', type=str, required=True, help='Ruta al archivo de calibración')
     args = parser.parse_args()
     
-    main(args.cam_index, args.Z, args.cal_file)
+    run_pipeline(args.cam_index, args.Z, args.cal_file)
