@@ -5,7 +5,8 @@ Contacto: jonathan.valadezg@udem.edu
 Creado por primera vez: 4 de marzo de 2024
 Última actualización: 5 de marzo de 2024
 
-Ejecutar script en terminal: python get-measurements.py --cam_index 0 --Z 100  --cal_file calibration_Jonathan.json 
+Ejemplo para ejecutar script en terminal: 
+    python get-measurements.py --cam_index 0 --Z 100  --cal_file calibration_Jonathan.json 
 """
 
 import cv2
@@ -68,17 +69,12 @@ def compute_line_segments(points, image, Z):
     line_lengths.sort()
     
     # Imprimir las distancias en orden ascendente
+    print(" ")
     print("Longitudes de línea en orden ascendente:")
     for length in line_lengths:
         print(length)
     
-    # Mostrar la imagen con las líneas dibujadas
-    cv2.imshow('Segmentos de Línea', image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    
     return line_lengths
-
 
 def compute_perimeter(line_lengths):
     """
@@ -95,6 +91,7 @@ def compute_perimeter(line_lengths):
         return 0
     
     total_perimeter = sum(line_lengths)
+    print(" ")
     print("Perímetro:", total_perimeter)
     return total_perimeter
 
@@ -112,10 +109,12 @@ def main(cam_index, Z, calibration_file):
 
     # Variables para almacenar los puntos seleccionados por el usuario
     selected_points = []
+    # Variables para almacenar los puntos de inicio y fin de los segmentos de línea
+    line_segments = []
 
     # Función para manejar eventos del mouse
     def mouse_callback(event, x, y, flags, param):
-        nonlocal selected_points
+        nonlocal selected_points, line_segments
         
         if event == cv2.EVENT_LBUTTONDOWN:
             selected_points.append((x, y))
@@ -130,18 +129,21 @@ def main(cam_index, Z, calibration_file):
                 selected_points.append(selected_points[0])
                 # Calcular las longitudes de los segmentos de línea y dibujar las líneas
                 line_lengths = compute_line_segments(selected_points, undistorted_frame, Z)
+                # Agregar las líneas a la lista de segmentos de línea
+                for i in range(len(selected_points) - 1):
+                    line_segments.append((selected_points[i], selected_points[i+1]))
                 # Calcular el perímetro a partir de las longitudes de los segmentos de línea
                 compute_perimeter(line_lengths)
                 # Limpiar la lista de puntos seleccionados para una nueva selección
                 selected_points.clear()
-                return  # Salir del bucle cuando se detenga la selección de puntos
-            
+    
         elif event == cv2.EVENT_RBUTTONDOWN:  # Manejar clic derecho
             print("Eliminando todos los puntos seleccionados.")
             selected_points.clear()  # Eliminar todos los puntos seleccionados
+            line_segments.clear()  # Eliminar todas las líneas
             # Redibujar la imagen con los puntos actualizados (en este caso, sin puntos)
             cv2.imshow('Imagen sin distorsión', undistorted_frame)
-            
+
     # Establecer el manejador de eventos del mouse
     cv2.namedWindow('Imagen sin distorsión')
     cv2.setMouseCallback('Imagen sin distorsión', mouse_callback)
@@ -155,7 +157,15 @@ def main(cam_index, Z, calibration_file):
         # Corrección de distorsión en la imagen
         undistorted_frame = undistort_image(frame, calibration_file)
         
-        # Mostrar la imagen corregida
+        # Dibujar las líneas almacenadas en la lista de segmentos de línea
+        for segment in line_segments:
+            cv2.line(undistorted_frame, segment[0], segment[1], (255, 0, 255), 2)  # Dibujar una línea morada
+
+        # Dibujar los puntos seleccionados en la imagen corregida
+        for point in selected_points:
+            cv2.circle(undistorted_frame, point, 5, (0, 255, 0), -1)
+
+        # Mostrar la imagen corregida con los puntos y líneas dibujadas
         cv2.imshow('Imagen sin distorsión', undistorted_frame)
         
         # Esperar a que el usuario presione una tecla para salir
